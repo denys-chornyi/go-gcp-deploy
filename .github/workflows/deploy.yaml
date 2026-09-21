@@ -6,13 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  PROJECT_ID: cs-project-r08ugfup
-  REGION: europe-west3
-  GAR_REPO: go-gcp-deploy
-  IMAGE_NAME: go-server
-  GKE_CLUSTER:  go-gcp-deploy-cluster
-
 jobs:
   ci-test:
     name: Build & Run Tests
@@ -57,6 +50,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Load env
+      - name: Load Environment File
+        run: |
+            grep -v '^#' .github/ci.env >> $GITHUB_ENV
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -82,6 +80,7 @@ jobs:
       - name: Deploy to Kubernetes
         run: |
           IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          
           kubectl apply -f k8s/deployment.yaml
           kubectl set image deployment/go-server go-server=$IMAGE_TAG
           kubectl rollout status deployment/go-server --timeout=120s
