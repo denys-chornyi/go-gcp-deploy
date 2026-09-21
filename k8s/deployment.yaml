@@ -18,10 +18,10 @@ spec:
         - name: ${APP_NAME}
           image: ${IMAGE_TAG}
           ports:
-            - containerPort: ${CONTAINER_PORT}
+            - containerPort: ${PORT}
           env:
             - name: PORT
-              value: "${CONTAINER_PORT}"
+              value: "${PORT}"
             - name: APP_NAME
               value: "${APP_NAME}"
             - name: ENVIRONMENT
@@ -37,4 +37,4 @@ spec:
     app: ${APP_NAME}      # Must match deployment template labels
   ports:
     - port: 80
-      targetPort: ${CONTAINER_PORT}
+      targetPort: ${PORT}
