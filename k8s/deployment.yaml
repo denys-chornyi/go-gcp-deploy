@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ${APP_NAME}
 spec:
-  replicas: ${NUM_REPLICAS}
+  # replicas: ${NUM_REPLICAS}
   selector:
     matchLabels:
       app: ${APP_NAME}
