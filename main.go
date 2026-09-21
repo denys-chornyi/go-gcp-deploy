@@ -12,6 +12,7 @@ func setupRouter() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("[REQUEST] %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		fmt.Fprintf(w, "Hello from GKE! You requested: %s\n", r.URL.Path)
 	})
 
