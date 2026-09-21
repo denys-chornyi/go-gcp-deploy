@@ -28,6 +28,7 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Hello from %s running in %s!", appName, environment)
 		fmt.Fprintf(w, "Hello from %s running in %s!", appName, environment)
 	})
 
