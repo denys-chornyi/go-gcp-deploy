@@ -3,16 +3,51 @@ name: Build and Deploy to GKE
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   PROJECT_ID: cs-project-r08ugfup
   REGION: europe-west3
-  GAR_REPO: my-go-repo
+  GAR_REPO: go-gcp-deploy
   IMAGE_NAME: go-server
-  GKE_CLUSTER: gcp-deploy
+  GKE_CLUSTER:  go-gcp-deploy-cluster
 
 jobs:
+  ci-test:
+    name: Build & Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+          cache: true
+
+      - name: Verify Dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Compile Application (main.go)
+        run: |
+          # Fails immediately if syntax or type errors exist
+          go build -v -o /dev/null ./...
+
+      - name: Execute Tests
+        run: |
+          # Runs all tests with race condition detection
+          go test -race -v ./...
+
   deploy:
+    name: Deploy to GKE
+    needs: ci-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -25,7 +60,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: 'projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          workload_identity_provider: 'projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool-v2/providers/github-provider'
           service_account: 'github-deployer@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
 
       - name: Configure Docker
@@ -49,4 +84,4 @@ jobs:
           IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           kubectl apply -f k8s/deployment.yaml
           kubectl set image deployment/go-server go-server=$IMAGE_TAG
-          kubectl rollout status deployment/go-server
+          kubectl rollout status deployment/go-server --timeout=120s
