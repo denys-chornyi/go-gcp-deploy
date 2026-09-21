@@ -90,6 +90,7 @@ jobs:
           
           # 3. Substitute variables and apply directly
           envsubst < k8s/deployment.yaml | kubectl apply -f -
+          envsubst < k8s/hpa.yaml | kubectl apply -f -
           
           # 4. Wait for the rollout to finish
           kubectl rollout status deployment/${APP_NAME} --timeout=120s
