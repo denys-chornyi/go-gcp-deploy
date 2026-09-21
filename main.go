@@ -7,33 +7,31 @@ import (
 	"os"
 )
 
-// setupRouter configures and returns the HTTP mux for the server.
-func setupRouter() http.Handler {
-	mux := http.NewServeMux()
+// getEnv fetches a variable or returns a fallback default
+func getEnv(key, fallback string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return fallback
+}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("[REQUEST] %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		fmt.Fprintf(w, "Hello from GKE! You requested: %s\n", r.URL.Path)
-	})
+func main() {
+	port := getEnv("PORT", "8080")
+	appName := getEnv("APP_NAME", "go-server")
+	environment := getEnv("ENVIRONMENT", "development")
 
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Starting %s in %s mode on port :%s", appName, environment, port)
+
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 
-	return mux
-}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello from %s running in %s!", appName, environment)
+	})
 
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	router := setupRouter()
-
-	log.Printf("Server listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatalf("Server failed: %s", err)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
 }

@@ -34,8 +34,10 @@ jobs:
 
       - name: Execute Tests
         run: |
-          # Runs all tests with race condition detection
-          go test -race -v ./...
+            set -a
+            source k8s/k8s.env
+            set +a
+            go test -race -v ./...
 
   deploy:
     name: Deploy to GKE
@@ -79,8 +81,15 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          set -a
+          source k8s/k8s.env
+          set +a
           
-          kubectl apply -f k8s/deployment.yaml
-          kubectl set image deployment/go-server go-server=$IMAGE_TAG
-          kubectl rollout status deployment/go-server --timeout=120s
+          # 2. Export IMAGE_TAG explicitly so envsubst can see it
+          export IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          
+          # 3. Substitute variables and apply directly
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          
+          # 4. Wait for the rollout to finish
+          kubectl rollout status deployment/${APP_NAME} --timeout=120s

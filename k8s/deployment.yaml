@@ -1,34 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: go-server
+  name: ${APP_NAME}
   labels:
-    app: go-server
+    app: ${APP_NAME}
 spec:
-  replicas: 2
+  replicas: ${NUM_REPLICAS}
   selector:
     matchLabels:
-      app: go-server
+      app: ${APP_NAME}
   template:
     metadata:
       labels:
-        app: go-server
+        app: ${APP_NAME}
     spec:
       containers:
-        - name: go-server
-          # Placeholder image - the GitHub Action will replace this dynamically
-          image: europe-west3-docker.pkg.dev/cs-project-r08ugfup/my-go-repo/go-server:latest
+        - name: ${APP_NAME}
+          image: ${IMAGE_TAG}
           ports:
-            - containerPort: 8080
+            - containerPort: ${CONTAINER_PORT}
+          env:
+            - name: PORT
+              value: "${CONTAINER_PORT}"
+            - name: APP_NAME
+              value: "${APP_NAME}"
+            - name: ENVIRONMENT
+              value: "${ENVIRONMENT}"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: go-server-service
+  name: ${APP_NAME}-service
 spec:
   type: LoadBalancer
   selector:
-    app: go-server
+    app: ${APP_NAME}      # Must match deployment template labels
   ports:
     - port: 80
-      targetPort: 8080
+      targetPort: ${CONTAINER_PORT}
