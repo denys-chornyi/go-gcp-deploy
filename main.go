@@ -26,7 +26,7 @@ func setupRouter() http.Handler {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8089"
+		port = "8080"
 	}
 
 	router := setupRouter()
